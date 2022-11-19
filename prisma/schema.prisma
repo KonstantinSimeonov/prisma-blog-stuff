@@ -13,6 +13,19 @@ model User {
   name     String?
   posts    Post[]
   comments Comment[]
+
+  following Follows[] @relation("Following")
+  followers Follows[] @relation("Followers")
+}
+
+model Follows {
+  following   User   @relation("Followers", fields: [followingId], references: [id])
+  followingId String
+
+  follower   User   @relation("Following", fields: [followerId], references: [id])
+  followerId String
+
+  @@id([followerId, followingId])
 }
 
 model Post {
