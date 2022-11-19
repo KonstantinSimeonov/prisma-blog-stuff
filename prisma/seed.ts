@@ -39,16 +39,16 @@ const gen_comments = (
   return comments
 }
 
-type CommentBatch = Readonly<{ data: Omit<CreateComment, `replies`>[]; next: readonly CreateComment[] }>
-
 const create_comments = async (comments: readonly CreateComment[]): Promise<void> => {
+  type CommentBatch = { data: Omit<CreateComment, `replies`>[]; next: CreateComment[] }
+
   if (comments.length === 0) return
-  const { data, next } = comments.reduce(
+  const { data, next } = comments.reduce<CommentBatch>(
     ({ data, next }, { replies, ...rest }) => ({
       data: [...data, rest],
       next: [...next, ...replies]
     }),
-    { data: [], next: [] } as CommentBatch
+    { data: [], next: [] }
   )
 
   console.log(await prisma.comment.createMany({ data }))
