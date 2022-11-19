@@ -14,8 +14,10 @@ model User {
   posts    Post[]
   comments Comment[]
 
-  following Follows[] @relation("Following")
-  followers Follows[] @relation("Followers")
+  following   Follows[]     @relation("Following")
+  followers   Follows[]     @relation("Followers")
+  PostLike    PostLike[]
+  CommentLike CommentLike[]
 }
 
 model Follows {
@@ -37,6 +39,17 @@ model Post {
   authorId  String
 
   comments Comment[]
+  PostLike PostLike[]
+}
+
+model PostLike {
+  post   Post   @relation(fields: [postId], references: [id])
+  postId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@id([postId, userId])
 }
 
 model Comment {
@@ -48,7 +61,18 @@ model Comment {
   post      Post    @relation(fields: [postId], references: [id])
   postId    String
 
-  replies  Comment[] @relation("Replies")
-  parent   Comment?  @relation("Replies", fields: [parentId], references: [id])
-  parentId String?
+  replies     Comment[]     @relation("Replies")
+  parent      Comment?      @relation("Replies", fields: [parentId], references: [id])
+  parentId    String?
+  CommentLike CommentLike[]
+}
+
+model CommentLike {
+  comment   Comment @relation(fields: [commentId], references: [id])
+  commentId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  @@id([commentId, userId])
 }
