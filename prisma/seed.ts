@@ -97,9 +97,27 @@ const create_posts = async (user_ids: readonly string[]) => {
   return post_ids.map(p => p.id)
 }
 
+const create_follows = async (user_ids: readonly string[]) => {
+  const data = user_ids.flatMap((id, i) => {
+    const drop = new Set(Array.from({ length: rand_int(0, user_ids.length) }, (_, i) => i))
+
+    const follows_for_id = user_ids
+      .filter((_, j) => !drop.has(j) && i !== j)
+      .map(follower_id => ({ followerId: follower_id, followingId: id }))
+
+    return follows_for_id
+  })
+
+  console.log(await prisma.follows.createMany({
+    data
+  }))
+}
+
 const main = async () => {
   const user_ids = await create_users()
   const post_ids = await create_posts(user_ids)
+
+  await create_follows(user_ids)
 
   const comments = post_ids.flatMap(post_id => gen_comments(post_id, null, user_ids, rand_int(5, 10)))
   await create_comments(comments)
