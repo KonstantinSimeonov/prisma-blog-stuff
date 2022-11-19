@@ -3,7 +3,7 @@ import { faker } from "@faker-js/faker"
 import * as uuid from "uuid"
 
 const prisma = new p.PrismaClient()
-const rand_int = (max: number, min = 0) => faker.datatype.number({ min, max: max - 1 }) | 0
+const rand_int = (min: number, max: number) => faker.datatype.number({ min, max: max - 1 }) | 0
 
 type CreateComment = Readonly<{
   published: boolean
@@ -29,7 +29,7 @@ const gen_comments = (
       postId: post_id,
       published: true,
       content: faker.lorem.text(),
-      authorId: author_ids[rand_int(author_ids.length)],
+      authorId: author_ids[rand_int(0, author_ids.length)],
       parentId: parent_id,
       id,
       replies: gen_comments(post_id, id, author_ids, length >> 1)
