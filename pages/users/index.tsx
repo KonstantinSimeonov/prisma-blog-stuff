@@ -1,20 +1,21 @@
 import * as p from "@prisma/client"
-import { GetServerSideProps } from "next"
+import { InferGetServerSidePropsType } from "next"
 
 const prisma = new p.PrismaClient()
 
-type Props = {
-  users: readonly (Omit<p.User, `followers`> & { followers: number })[]
-}
-
-export const getServerSideProps: GetServerSideProps<Props> = async () => {
+export const getServerSideProps = async () => {
   await prisma.$connect()
 
   const users = (await prisma.user.findMany({
     include: {
-      followers: true
+      _count: {
+        select: {
+          followers: true,
+          posts: true
+        }
+      }
     }
-  })).map(({ followers, ...rest }) => ({ ...rest, followers: followers.length }))
+  }))
 
   await prisma.$disconnect()
 
@@ -25,11 +26,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
   }
 }
 
+type Props = InferGetServerSidePropsType<typeof getServerSideProps>
+
 const UsersPage: React.FC<Props> = ({ users }) => (
   <ul>
     {users.map(u => (
       <li key={u.id}>
-        {u.name} | {u.email} | {u.followers} followers
+        {u.name} | {u.email} | {u._count.followers} followers | {u._count.posts} posts
       </li>
     ))}
   </ul>
