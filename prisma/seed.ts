@@ -91,6 +91,7 @@ const create_posts = async (user_ids: readonly string[]) => {
         content: faker.lorem.text(),
         published: true,
         authorId,
+        createdAt: faker.date.past()
       })
     )
   )
