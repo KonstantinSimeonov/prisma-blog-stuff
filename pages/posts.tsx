@@ -1,4 +1,5 @@
 import * as p from "@prisma/client"
+import * as React from "react"
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next"
 import Link from "next/link"
 import { get_pagination_params } from "../pagination"
@@ -10,14 +11,14 @@ const get_order = (context: GetServerSidePropsContext) => {
   const { order } = context.query
 
   switch (order) {
-    case `likes`:
+    case `most-likes`:
       return {
         PostLike: {
           _count: `desc`
         }
       } as const
 
-    case `comments`:
+    case `most-comments`:
       return {
         comments: {
           _count: `desc`
@@ -72,6 +73,33 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
 type Props = InferGetServerSidePropsType<typeof getServerSideProps>
 
+const SearchInput: React.FC = () => {
+  return (
+    <div>
+      <h2>Search posts</h2>
+      <form action="/posts" method="GET" style={css`display: flex; gap: 1rem; align-items: end;`}>
+        <label>
+          <p>Page</p>
+        <input name="page" type="number" defaultValue={1} placeholder="Page" />
+</label>
+        <label>
+          <p>Posts per page</p>
+        <input name="page_size" type="number" defaultValue={10} placeholder="Posts per page" />
+</label>
+        <label>
+          <p>Show first posts with</p>
+        <select name="order" placeholder="Order by">
+          <option value="most-likes">most likes</option>
+          <option value="most-comments">most comments</option>
+          <option value="most-recent">most recent</option>
+        </select>
+</label>
+        <button type="submit">Search</button>
+      </form>
+    </div>
+  )
+}
+
 const AuthorLink: React.FC<{ author: Record<`name` | `id`, string> }> = ({ author }) => (
   <Link style={css`font-style: italic`} href={`/users/${author.id}`}>{author.name}</Link>
 )
@@ -84,6 +112,8 @@ const PostDate: React.FC<{ iso: string }> = ({ iso }) => <time>{new Date(iso).to
 
 const Posts: React.FC<Props> =
   ({ posts }) => (
+    <div>
+    <SearchInput />
     <ul>
       {posts.map(p => (
         <li key={p.id}>
@@ -103,9 +133,11 @@ const Posts: React.FC<Props> =
         </li>
       ))}
     </ul>
+</div>
   )
 
 type CommentWithReplies = p.Comment & { author: p.User } & { replies: CommentWithReplies[] }
+
 const build_comment_tree = (comments: readonly (p.Comment & { author: p.User })[]) => {
   const by_id: Record<string, CommentWithReplies> = Object.fromEntries(
     comments.map(c => [c.id, { ...c, replies: [] }])
@@ -118,7 +150,6 @@ const build_comment_tree = (comments: readonly (p.Comment & { author: p.User })[
   return Object.values(by_id)
 }
 
-type z = Pick<Props[`posts`][number], `comments`>
 const Comments: React.FC<{ tree: CommentWithReplies[] }> =
   ({ tree }) => (
     <ul style={css`position: relative; list-style: none`}>
