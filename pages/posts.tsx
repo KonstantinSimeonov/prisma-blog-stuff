@@ -14,26 +14,28 @@ const get_order = (context: GetServerSidePropsContext) => {
     case `most-likes`:
       return {
         PostLike: {
-          _count: `desc`
-        }
+          _count: `desc`,
+        },
       } as const
 
     case `most-comments`:
       return {
         comments: {
-          _count: `desc`
-        }
+          _count: `desc`,
+        },
       } as const
 
     case `most-recent`:
     default:
       return {
-        createdAt: `desc`
+        createdAt: `desc`,
       } as const
   }
 }
 
-export const getServerSideProps = async (context: GetServerSidePropsContext) => {
+export const getServerSideProps = async (
+  context: GetServerSidePropsContext
+) => {
   await prisma.$connect()
 
   const { skip, take } = get_pagination_params(context)
@@ -46,28 +48,31 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     include: {
       _count: {
         select: {
-          PostLike: true
-        }
+          PostLike: true,
+        },
       },
       comments: {
         include: {
-          author: true
-        }
+          author: true,
+        },
       },
       author: {
         select: {
-          name: true
-        }
-      }
-    }
+          name: true,
+        },
+      },
+    },
   })
 
   await prisma.$disconnect()
 
   return {
     props: {
-      posts: posts.map(({ createdAt, ...p }) => ({ createdAt: createdAt.toISOString(), ...p }))
-    }
+      posts: posts.map(({ createdAt, ...p }) => ({
+        createdAt: createdAt.toISOString(),
+        ...p,
+      })),
+    },
   }
 }
 
@@ -77,51 +82,89 @@ const SearchInput: React.FC = () => {
   return (
     <div>
       <h2>Search posts</h2>
-      <form action="/posts" method="GET" style={css`display: flex; gap: 1rem; align-items: end;`}>
+      <form
+        action="/posts"
+        method="GET"
+        style={css`
+          display: flex;
+          gap: 1rem;
+          align-items: end;
+        `}
+      >
         <label>
           <p>Page</p>
-        <input name="page" type="number" defaultValue={1} placeholder="Page" />
-</label>
+          <input
+            name="page"
+            type="number"
+            defaultValue={1}
+            placeholder="Page"
+          />
+        </label>
         <label>
           <p>Posts per page</p>
-        <input name="page_size" type="number" defaultValue={10} placeholder="Posts per page" />
-</label>
+          <input
+            name="page_size"
+            type="number"
+            defaultValue={10}
+            placeholder="Posts per page"
+          />
+        </label>
         <label>
           <p>Show first posts with</p>
-        <select name="order" placeholder="Order by">
-          <option value="most-likes">most likes</option>
-          <option value="most-comments">most comments</option>
-          <option value="most-recent">most recent</option>
-        </select>
-</label>
+          <select name="order" placeholder="Order by">
+            <option value="most-likes">most likes</option>
+            <option value="most-comments">most comments</option>
+            <option value="most-recent">most recent</option>
+          </select>
+        </label>
         <button type="submit">Search</button>
       </form>
     </div>
   )
 }
 
-const AuthorLink: React.FC<{ author: Record<`name` | `id`, string> }> = ({ author }) => (
-  <Link style={css`font-style: italic`} href={`/users/${author.id}`}>{author.name}</Link>
+const AuthorLink: React.FC<{ author: Record<`name` | `id`, string> }> = ({
+  author,
+}) => (
+  <Link
+    style={css`
+      font-style: italic;
+    `}
+    href={`/users/${author.id}`}
+  >
+    {author.name}
+  </Link>
 )
 
-const PostDate: React.FC<{ iso: string }> = ({ iso }) => <time>{new Date(iso).toLocaleString(`en`, {
-  year: `numeric`,
-  month: `short`,
-  day: `numeric`
-})}</time>
+const PostDate: React.FC<{ iso: string }> = ({ iso }) => (
+  <time>
+    {new Date(iso).toLocaleString(`en`, {
+      year: `numeric`,
+      month: `short`,
+      day: `numeric`,
+    })}
+  </time>
+)
 
-const Posts: React.FC<Props> =
-  ({ posts }) => (
-    <div>
+const Posts: React.FC<Props> = ({ posts }) => (
+  <div>
     <SearchInput />
     <ul>
-      {posts.map(p => (
+      {posts.map((p) => (
         <li key={p.id}>
           <article>
-            <header style={css`display: flex; align-items: center; gap: 0.5rem`}>
+            <header
+              style={css`
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+              `}
+            >
               <h2>{p.title}</h2>
               <PostDate iso={p.createdAt} />
-              <span>by <AuthorLink author={p.author} /></span>
+              <span>
+                by <AuthorLink author={p.author} />
+              </span>
               <span>{p._count.PostLike} likes</span>
             </header>
             <p>{p.content}</p>
@@ -133,14 +176,18 @@ const Posts: React.FC<Props> =
         </li>
       ))}
     </ul>
-</div>
-  )
+  </div>
+)
 
-type CommentWithReplies = p.Comment & { author: p.User } & { replies: CommentWithReplies[] }
+type CommentWithReplies = p.Comment & { author: p.User } & {
+  replies: CommentWithReplies[]
+}
 
-const build_comment_tree = (comments: readonly (p.Comment & { author: p.User })[]) => {
+const build_comment_tree = (
+  comments: readonly (p.Comment & { author: p.User })[]
+) => {
   const by_id: Record<string, CommentWithReplies> = Object.fromEntries(
-    comments.map(c => [c.id, { ...c, replies: [] }])
+    comments.map((c) => [c.id, { ...c, replies: [] }])
   )
 
   for (const c of Object.values(by_id)) {
@@ -150,19 +197,45 @@ const build_comment_tree = (comments: readonly (p.Comment & { author: p.User })[
   return Object.values(by_id)
 }
 
-const Comments: React.FC<{ tree: CommentWithReplies[] }> =
-  ({ tree }) => (
-    <ul style={css`position: relative; list-style: none`}>
-      <span style={css`position: absolute; height: calc(100% + 0.9rem); border: 1px solid black; top: -1.6rem; left: -0.6rem`} />
-      {tree.map(c => (
-        <li key={c.id} style={css`position: relative`}>
-          <span style={css`border: 1px solid black; position: absolute; width: 2.4rem; top: 0.5rem; left: -3rem;`} />
-          <p><AuthorLink author={c.author} />: {c.content}</p>
-          {c.replies.length ? <Comments tree={c.replies} /> : null}
-        </li>
-      ))}
-    </ul>
-  )
-
+const Comments: React.FC<{ tree: CommentWithReplies[] }> = ({ tree }) => (
+  <ul
+    style={css`
+      position: relative;
+      list-style: none;
+    `}
+  >
+    <span
+      style={css`
+        position: absolute;
+        height: calc(100% + 0.9rem);
+        border: 1px solid black;
+        top: -1.6rem;
+        left: -0.6rem;
+      `}
+    />
+    {tree.map((c) => (
+      <li
+        key={c.id}
+        style={css`
+          position: relative;
+        `}
+      >
+        <span
+          style={css`
+            border: 1px solid black;
+            position: absolute;
+            width: 2.4rem;
+            top: 0.5rem;
+            left: -3rem;
+          `}
+        />
+        <p>
+          <AuthorLink author={c.author} />: {c.content}
+        </p>
+        {c.replies.length ? <Comments tree={c.replies} /> : null}
+      </li>
+    ))}
+  </ul>
+)
 
 export default Posts

@@ -1,12 +1,7 @@
-import {GetServerSidePropsContext} from "next"
+import { GetServerSidePropsContext } from "next"
 
-const clamp = (low: number, high: number, x: unknown) => Math.min(
-  high,
-  Math.max(
-    low,
-    parseInt(String(x), 10) || 0
-  )
-)
+const clamp = (low: number, high: number, x: unknown) =>
+  Math.min(high, Math.max(low, parseInt(String(x), 10) || 0))
 
 export const get_pagination_params = (context: GetServerSidePropsContext) => {
   const page = clamp(0, Infinity, context.query.page)
