@@ -1,5 +1,6 @@
 import * as p from "@prisma/client"
 import { InferGetServerSidePropsType } from "next"
+import Link from "next/link"
 
 const prisma = new p.PrismaClient()
 
@@ -32,8 +33,11 @@ const UsersPage: React.FC<Props> = ({ users }) => (
   <ul>
     {users.map((u) => (
       <li key={u.id}>
-        {u.name} | {u.email} | {u._count.followers} followers | {u._count.posts}{" "}
-        posts
+        <span>
+          {u.name} | {u.email} | {u._count.followers} followers |{" "}
+          {u._count.posts} posts
+        </span>{" "}
+        <Link href={`/api/auth?user_id=${u.id}`}>Log in as this user</Link>
       </li>
     ))}
   </ul>
